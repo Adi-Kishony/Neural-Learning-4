@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
 
-def plotting_4_sample_neurons(target_t, target_activity, t, R, random_units):
+def plotting_4_sample_neurons_trained_vs_target(target_t, target_activity, t, R, random_units):
     plt.figure(figsize=(10, 6))
     for i, unit in enumerate(random_units):
         plt.subplot(2, 2, i + 1)
@@ -15,10 +15,10 @@ def plotting_4_sample_neurons(target_t, target_activity, t, R, random_units):
         plt.ylabel('Activity')
         plt.legend()
     plt.tight_layout()
-    plt.show()
+    plt.savefig("unit neurons train vs target.png")
 
 
-def units_before_and_after_training(t, R0, R, random_units):
+def plotting_4_sample_neurons_trained_vs_untrained(t, R0, R, random_units):
     plt.figure(figsize=(10, 6))
     for i, unit in enumerate(random_units):
         plt.subplot(2, 2, i + 1)
@@ -29,7 +29,7 @@ def units_before_and_after_training(t, R0, R, random_units):
         plt.ylabel('Activity')
         plt.legend()
     plt.tight_layout()
-    plt.show()
+    plt.savefig("unit neurons train vs untrained.png")
 
 
 def heatmap_of_units_in_time(R_ds, R0_ds, target_activity):
@@ -50,7 +50,7 @@ def heatmap_of_units_in_time(R_ds, R0_ds, target_activity):
     for ax in axs:
         ax.set_ylabel('Units')
     plt.tight_layout()
-    plt.show()
+    plt.savefig("heatmap of units in time.png")
 
 
 def plot_trajectories(data_proj, title, color, label, dims=(2, 3)):
@@ -85,7 +85,7 @@ def plot_trajectories(data_proj, title, color, label, dims=(2, 3)):
         ax.legend()
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f'{title} - 3D Trajectory.png')
 
 
 def plot_explained_variance(target_var, R_var, R0_var):
@@ -99,13 +99,13 @@ def plot_explained_variance(target_var, R_var, R0_var):
     plt.ylabel("Explained Variance Ratio")
     plt.legend()
     plt.grid()
-    plt.show()
+    plt.savefig("Cumulative Explained Variance.png")
 
 
 def perform_pca(data, n_components=50):
     pca = PCA(n_components=n_components)
-    pca_proj = pca.fit_transform(data.T).T  # Project data onto PC space
-    explained_variance = pca.explained_variance_ratio_.cumsum()  # Cumulative explained variance
+    pca_proj = pca.fit_transform(data.T).T
+    explained_variance = pca.explained_variance_ratio_.cumsum()
     return pca_proj, explained_variance, pca
 
 
@@ -124,6 +124,7 @@ def compare_J_norms(J, J0):
         f"Norm of difference (Trained vs Untrained): {norm_difference_trained:.4f}")
     print(
         f"Norm of difference (Random vs Random): {norm_difference_random:.4f}")
+
 
 def compare_weights_distributions(J, J0):
     plt.figure(figsize=(12, 6))
@@ -155,7 +156,7 @@ def compare_weights_distributions(J, J0):
     plt.ylim(1, y_max)
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig('hist weight dist.png')
 
 
 def compare_heatmaps_of_connectivity_mats(J, J0):
@@ -170,7 +171,8 @@ def compare_heatmaps_of_connectivity_mats(J, J0):
     plt.colorbar()
     plt.title("Trained Connectivity Matrix (J)")
     plt.tight_layout()
-    plt.show()
+    plt.savefig('Heatmap Connectivity Matrix.png')
+
 
 def plot_column_mean_square(J):
     mean_square = np.mean(J ** 2, axis=0)  # Mean square of each column
@@ -183,7 +185,8 @@ def plot_column_mean_square(J):
     plt.title("Heatmap of Retained Columns (MS > 0.5)")
     plt.xlabel("Retained Columns")
     plt.ylabel("Units")
-    plt.show()
+    plt.savefig("Heatmap of Retained Columns.png")
+
 
 if __name__ == '__main__':
     # Loading data
@@ -202,15 +205,14 @@ if __name__ == '__main__':
     np.random.seed(42)
     random_units = np.random.choice(N, 4, replace=False)
     # 2.1
-    plotting_4_sample_neurons(target_t, target_activity, t, R, random_units)
+    plotting_4_sample_neurons_trained_vs_target(target_t, target_activity, t, R, random_units)
     # 2.2
-    units_before_and_after_training(t, R0, R, random_units)
+    plotting_4_sample_neurons_trained_vs_untrained(t, R0, R, random_units)
     # 2.3
     step = len(t) // len(target_t)
     R_ds = R[:, ::step]
     R0_ds = R0[:, ::step]
     heatmap_of_units_in_time(R_ds, R0_ds, target_activity)
-
 
     # 2.2
     target_proj, target_var, target_pca = perform_pca(target_activity)
