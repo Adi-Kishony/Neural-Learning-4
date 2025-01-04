@@ -17,6 +17,7 @@ def plotting_4_sample_neurons(target_t, target_activity, t, R, random_units):
     plt.tight_layout()
     plt.show()
 
+
 def units_before_and_after_training(t, R0, R, random_units):
     plt.figure(figsize=(10, 6))
     for i, unit in enumerate(random_units):
@@ -29,6 +30,7 @@ def units_before_and_after_training(t, R0, R, random_units):
         plt.legend()
     plt.tight_layout()
     plt.show()
+
 
 def heatmap_of_units_in_time(R_ds, R0_ds, target_activity):
     fig, axs = plt.subplots(3, 1, figsize=(12, 8), sharex=True)
@@ -49,6 +51,7 @@ def heatmap_of_units_in_time(R_ds, R0_ds, target_activity):
         ax.set_ylabel('Units')
     plt.tight_layout()
     plt.show()
+
 
 def plot_trajectories(data_proj, title, color, label, dims=(2, 3)):
     fig = plt.figure(figsize=(12, 6))
@@ -84,6 +87,7 @@ def plot_trajectories(data_proj, title, color, label, dims=(2, 3)):
     plt.tight_layout()
     plt.show()
 
+
 def plot_explained_variance(target_var, R_var, R0_var):
     plt.figure(figsize=(10, 6))
     plt.plot(target_var, label="Target Activity", color="blue")
@@ -97,26 +101,102 @@ def plot_explained_variance(target_var, R_var, R0_var):
     plt.grid()
     plt.show()
 
+
 def perform_pca(data, n_components=50):
     pca = PCA(n_components=n_components)
     pca_proj = pca.fit_transform(data.T).T  # Project data onto PC space
     explained_variance = pca.explained_variance_ratio_.cumsum()  # Cumulative explained variance
     return pca_proj, explained_variance, pca
 
+
 def project_to_common_space(target_activity, R0_ds, trained_pca):
     target_common_proj = trained_pca.transform(target_activity.T).T
     R0_common_proj = trained_pca.transform(R0_ds.T).T
     return target_common_proj, R0_common_proj
+
+
+def compare_J_norms(J, J0):
+    norm_difference_trained = np.linalg.norm(J - J0)
+    random_matrix1 = np.random.normal(size=J0.shape)
+    random_matrix2 = np.random.normal(size=J0.shape)
+    norm_difference_random = np.linalg.norm(random_matrix1 - random_matrix2)
+    print(
+        f"Norm of difference (Trained vs Untrained): {norm_difference_trained:.4f}")
+    print(
+        f"Norm of difference (Random vs Random): {norm_difference_random:.4f}")
+
+def compare_weights_distributions(J, J0):
+    plt.figure(figsize=(12, 6))
+    hist_J0, bins_J0 = np.histogram(J0.flatten(), bins=100)
+    hist_J, bins_J = np.histogram(J.flatten(), bins=100)
+
+    x_min = min(bins_J0.min(), bins_J.min())
+    x_max = max(bins_J0.max(), bins_J.max())
+    y_max = max(hist_J0.max(), hist_J.max())
+
+    plt.subplot(1, 2, 1)
+    plt.hist(J0.flatten(), bins=100, log=True, color='green', alpha=0.7,
+             label="Untrained (J0)")
+    plt.xlabel("Weight Value")
+    plt.ylabel("Log Frequency")
+    plt.title("Weight Distribution - Untrained (J0)")
+    plt.legend()
+    plt.xlim(x_min, x_max)
+    plt.ylim(1, y_max)
+
+    plt.subplot(1, 2, 2)
+    plt.hist(J.flatten(), bins=100, log=True, color='orange', alpha=0.7,
+             label="Trained (J)")
+    plt.xlabel("Weight Value")
+    plt.ylabel("Log Frequency")
+    plt.title("Weight Distribution - Trained (J)")
+    plt.legend()
+    plt.xlim(x_min, x_max)
+    plt.ylim(1, y_max)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def compare_heatmaps_of_connectivity_mats(J, J0):
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1, 2, 1)
+    plt.imshow(J0, aspect='auto', cmap='viridis')
+    plt.colorbar()
+    plt.title("Untrained Connectivity Matrix (J0)")
+
+    plt.subplot(1, 2, 2)
+    plt.imshow(J, aspect='auto', cmap='viridis')
+    plt.colorbar()
+    plt.title("Trained Connectivity Matrix (J)")
+    plt.tight_layout()
+    plt.show()
+
+def plot_column_mean_square(J):
+    mean_square = np.mean(J ** 2, axis=0)  # Mean square of each column
+    retained_columns = np.where(mean_square > 0.5)[0]  # Columns with MS > 0.5
+    # Heatmap of Retained Columns
+    retained_matrix = J[:, retained_columns]
+    plt.figure(figsize=(8, 6))
+    plt.imshow(retained_matrix, aspect='auto', cmap='viridis')
+    plt.colorbar()
+    plt.title("Heatmap of Retained Columns (MS > 0.5)")
+    plt.xlabel("Retained Columns")
+    plt.ylabel("Units")
+    plt.show()
 
 if __name__ == '__main__':
     # Loading data
     D = hdf5storage.loadmat("ps4_data.mat")
     N = D['N']  # Number of RNN units
     target_t = D['target_t'].flatten()  # Time vector for target activity
-    target_activity = D['target_activity']  # Target firing rates (N x len(target_t))
+    target_activity = D[
+        'target_activity']  # Target firing rates (N x len(target_t))
     t = D['t'].flatten()  # Time vector for RNN activity
     R = D['R']  # Trained RNN activity (N x len(t))
     R0 = D['R0']  # Untrained RNN activity (N x len(t))
+    J = D['J']
+    J0 = D['J0']
 
     # 2
     np.random.seed(42)
@@ -131,6 +211,7 @@ if __name__ == '__main__':
     R0_ds = R0[:, ::step]
     heatmap_of_units_in_time(R_ds, R0_ds, target_activity)
 
+
     # 2.2
     target_proj, target_var, target_pca = perform_pca(target_activity)
     R_proj, R_var, R_pca = perform_pca(R_ds)
@@ -142,10 +223,9 @@ if __name__ == '__main__':
     plot_trajectories(R_proj, "Trained RNN", color="orange", label="Trained")
     plot_trajectories(R0_proj, "Untrained RNN", color="green",
                       label="Untrained")
-
     # 2.2 2
     target_common_proj, R0_common_proj = project_to_common_space(
-        target_activity, R_ds, R0_ds, R_pca)
+        target_activity, R0_ds, R_pca)
     # Plot common space trajectories
     plot_trajectories(target_common_proj, "Target Activity (Common PCA)",
                       color="blue", label="Target")
@@ -156,7 +236,12 @@ if __name__ == '__main__':
     # 2.2 3
     plot_explained_variance(target_var, R_var, R0_var)
 
-
-
-
-
+    # 2.3
+    # 2.3 1
+    compare_J_norms(J, J0)
+    # 2.3 2
+    compare_weights_distributions(J, J0)
+    # 2.3 3
+    compare_heatmaps_of_connectivity_mats(J, J0)
+    # 2.3 4
+    plot_column_mean_square(J)
